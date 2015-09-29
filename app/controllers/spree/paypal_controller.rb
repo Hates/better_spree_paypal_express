@@ -11,7 +11,7 @@ module Spree
       shipping_adjustments = additional_adjustments.shipping
 
       additional_adjustments.eligible.each do |adjustment|
-        next if (tax_adjustments + shipping_adjustments).include?(adjustment)
+        next if shipping_adjustments.include?(adjustment)
         items << {
           :Name => adjustment.label,
           :Quantity => 1,
@@ -81,7 +81,7 @@ module Spree
           :Quantity => item.quantity,
           :Amount => {
               :currencyID => item.order.currency,
-              :value => item.price
+              :value => item.paypal_price
           },
           :ItemCategory => "Physical"
       }
@@ -116,7 +116,7 @@ module Spree
       # This calculates the item sum based upon what is in the order total, but not for shipping
       # or tax.  This is the easiest way to determine what the items should cost, as that
       # functionality doesn't currently exist in Spree core
-      item_sum = current_order.total - shipment_sum - current_order.additional_tax_total
+      item_sum = current_order.total - shipment_sum
 
       if item_sum.zero?
         # Paypal does not support no items or a zero dollar ItemTotal
@@ -140,10 +140,6 @@ module Spree
           :ShippingTotal => {
             :currencyID => current_order.currency,
             :value => shipment_sum,
-          },
-          :TaxTotal => {
-            :currencyID => current_order.currency,
-            :value => current_order.additional_tax_total
           },
           :ShipToAddress => address_options,
           :PaymentDetailsItem => items,
